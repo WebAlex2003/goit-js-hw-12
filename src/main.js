@@ -1,45 +1,63 @@
-import { fetchImages } from '../src/js/pixabay-api';
+import pixabayApi from './js/pixabay-api.js';
 import {
   renderImages,
-  showLoadingIndicator,
-  hideLoadingIndicator,
-} from './js/render-function';
+  loadStart,
+  loadFinish,
+  displayLoadMore,
+  hideLoadMore,
+  displayNoMoreForLoad,
+  scroll,
+} from './js/render-function.js';
 
-document
-  .querySelector('.search-form')
-  .addEventListener('submit', async event => {
-    event.preventDefault();
+const search_form = document.querySelector('#search-form');
+const load_more_form = document.querySelector('#load_more_form');
+const per_page = 15;
 
-    const query = event.target.elements.searchQuery.value.trim();
-    if (!query) {
-      iziToast.warning({
-        title: 'Warning',
-        message: 'Please enter a search query!',
-      });
-      return;
+let page = 1;
+let search_value = '';
+
+const get_new_images = (new_request = true) => {
+  hideLoadMore();
+  loadStart();
+
+  pixabayApi(search_value, page, per_page).then(response => {
+    const displayed_count = page * per_page;
+    const data = response.data;
+
+    loadFinish();
+    renderImages(data, new_request);
+
+    if (data.hits.length > 0 && data.totalHits > 0) {
+      if (displayed_count < data.totalHits) {
+        displayLoadMore();
+      } else {
+        displayNoMoreForLoad();
+      }
+
+      if (new_request) {
+        search_form.text.value = '';
+      }
     }
 
-    showLoadingIndicator();
-
-    try {
-      const data = await fetchImages(query);
-      renderImages(data.hits);
-    } catch (error) {
-      iziToast.error({
-        title: 'Error',
-        message: `Something went wrong: ${error.message}`,
-      });
-    } finally {
-      hideLoadingIndicator();
-    }
+    if (!new_request) scroll();
   });
+};
 
+const search_action = event => {
+  event.preventDefault();
 
-  window.addEventListener('scroll', () => {
-    const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-    if (scrollTop + clientHeight >= scrollHeight - 100) {
-      document.querySelector('.load-more-btn').style.display = 'block';
-    } else {
-      document.querySelector('.load-more-btn').style.display = 'none';
-    }
-  });
+  if (event.target.text.value.trim().length > 0) {
+    page = 1;
+    search_value = event.target.text.value.trim();
+    get_new_images();
+  }
+};
+
+const load_more_action = event => {
+  page++;
+  event.preventDefault();
+  get_new_images(false);
+};
+
+search_form.addEventListener('submit', search_action);
+load_more_form.addEventListener('submit', load_more_action);

@@ -1,113 +1,91 @@
 import iziToast from 'izitoast';
 import 'izitoast/dist/css/iziToast.min.css';
+
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
-import axios from 'axios';
 
-let lightbox;
-let currentPage = 1;
-let searchQuery = '';
-const perPage = 15;
+const images_element = document.querySelector('.images');
+const loader_element = document.querySelector('#loader_place');
+const load_more_form = document.querySelector('#load_more_form');
 
-export async function fetchImages(query) {
-  try {
-    const response = await axios.get('https://pixabay.com/api/', {
-      params: {
-        key: '44082104-13032bddabedf7f071f678933',
-        q: query,
-        image_type: 'photo',
-        orientation: 'horizontal',
-        safesearch: true,
-        page: currentPage,
-        per_page: perPage,
-      },
+const lightbox = new SimpleLightbox('.images li a', {
+  captionDelay: 250,
+  captionsData: 'alt',
+});
+
+export const loadStart = () => {
+  loader_element.innerHTML = '<span class="loader"></span>';
+};
+export const loadFinish = () => {
+  loader_element.innerHTML = '';
+};
+
+export const displayLoadMore = () => {
+  load_more_form.classList.remove('visually-hidden');
+};
+
+export const hideLoadMore = () => {
+  load_more_form.classList.add('visually-hidden');
+};
+
+export const displayNoMoreForLoad = () => {
+  iziToast.info({
+    message: `We're sorry, but you've reached the end of search results!`,
+    position: 'topRight',
+  });
+};
+
+export const scroll = () => {
+  const image_element = document.querySelector('.image');
+
+  if (image_element) {
+    const image_element_height = image_element.getBoundingClientRect().height;
+
+    window.scrollBy({
+      top: image_element_height * 2,
+      behavior: 'smooth',
     });
-    return response.data.hits;
-  } catch (error) {
-    console.error('Error fetching images:', error);
-    return [];
   }
-}
+};
 
-export function renderImages(images) {
-  const gallery = document.querySelector('.gallery');
+export const renderImages = (data, new_request = true) => {
+  if (new_request) {
+    images_element.innerHTML = '';
+  }
 
-  if (images.length === 0) {
+  if (data.hits.length === 0) {
     iziToast.error({
-      title: 'Error',
-      message:
-        'Sorry, there are no images matching your search query. Please try again!',
+      message: `Sorry, there are no images matching your search query. Please, try again!`,
+      position: 'topRight',
     });
-    return;
-  }
-
-  const markup = images
-    .map(
-      ({
-        webformatURL = '',
-        largeImageURL = '',
-        tags = '',
-        likes = 0,
-        views = 0,
-        comments = 0,
-        downloads = 0,
-      }) => `
-    <a class="gallery__item" href="${largeImageURL}" data-caption="${tags}">
-      <img src="${webformatURL}" alt="${tags}" loading="lazy" />
-      <div class="info">
-        <p class="info-item"><b>Likes:</b> ${likes}</p>
-        <p class="info-item"><b>Views:</b> ${views}</p>
-        <p class="info-item"><b>Comments:</b> ${comments}</p>
-        <p class="info-item"><b>Downloads:</b> ${downloads}</p>
-      </div>
-    </a>
-  `
-    )
-    .join('');
-
-  gallery.insertAdjacentHTML('beforeend', markup);
-
-  if (!lightbox) {
-    lightbox = new SimpleLightbox('.gallery a');
   } else {
+    const image_elements = data.hits
+      .map(hit => {
+        return `<li class="image">
+          <a href="${hit.largeImageURL}"><img src="${hit.webformatURL}" alt="${hit.tags}"></a>
+          <ul class="info">
+            <li class="info-block">
+              <p3>Likes</p3>
+              <span>${hit.likes}</span>
+            </li>
+            <li class="info-block">
+              <p3>Views</p3>
+              <span>${hit.views}</span>
+            </li>
+            <li class="info-block">
+              <p3>Comments</p3>
+              <span>${hit.comments}</span>
+            </li>
+            <li class="info-block">
+              <p3>Downloads</p3>
+              <span>${hit.downloads}</span>
+            </li>
+          </ul>
+        </li>`;
+      })
+      .join('');
+
+    images_element.innerHTML += image_elements;
     lightbox.refresh();
   }
-}
-
-export async function loadMoreImages() {
-  currentPage += 1;
-  const newImages = await fetchImages(searchQuery);
-  renderImages(newImages);
-}
-
-export function showLoadingIndicator() {
-  document.querySelector('.loader').classList.remove('hidden');
-}
-
-export function hideLoadingIndicator() {
-  document.querySelector('.loader').classList.add('hidden');
-}
-
-export async function handleSubmit(event) {
-  event.preventDefault();
-  const input = document.querySelector('.search-form input');
-  searchQuery = input.value.trim();
-  if (!searchQuery) {
-    iziToast.warning({
-      title: 'Warning',
-      message: 'Please enter a search query!',
-    });
-    return;
-  }
-  currentPage = 1;
-  document.querySelector('.gallery').innerHTML = ''; // Очистка галереи при новом запросе
-  showLoadingIndicator();
-  const images = await fetchImages(searchQuery);
-  hideLoadingIndicator();
-  renderImages(images);
-}
-
-document.querySelector('.search-form').addEventListener('submit', handleSubmit);
-document
-  .querySelector('.load-more-btn')
-  .addEventListener('click', loadMoreImages);
+};

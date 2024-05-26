@@ -1,26 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gallery</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100..900&display=swap"
+      rel="stylesheet"
+    />
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Image Search App</title>
-  <link rel="stylesheet" href="./css/styles.css">
-</head>
-
-<body>
-  <header>
-    <form class="search-form">
-      <input type="text" name="searchQuery" placeholder="Search images..." required>
-      <button type="submit">Search</button>
+    <link rel="stylesheet" href="./css/styles.css" />
+  </head>
+  <body>
+    <form class="input-section" id="search-form">
+      <input
+        type="text"
+        name="text"
+        placeholder="Search images..."
+        id="search-image"
+      />
+      <button type="submit" id="search-button">Search</button>
     </form>
-  </header>
-  <main>
-    <div class="loader hidden"></div>
-    <div class="gallery"></div>
-    <button class="load-more-btn" style="display: none;">Load more</button>
-  </main>
-  <script type="module" src="./main.js"></script>
-</body>
+    <ul class="images"></ul>
 
+    <div id="loader_place"></div>
+    <form class="visually-hidden" id="load_more_form">
+      <button id="load_more_button">Load more</button>
+    </form>
+    <script type="module" src="./main.js"></script>
+  </body>
 </html>
